@@ -24,6 +24,8 @@ export default function PreVoteShare({ ballotNumber }: Props) {
       url={`${origin}/b/${ballotNumber}`}
       trigger="Share the mystery →"
       triggerClassName="rounded-full border border-line px-4 py-1.5 text-xs tracking-wide opacity-60 transition-opacity hover:opacity-100"
+      imageUrl={`/api/og/ballot/${ballotNumber}?spoiler=1`}
+      imageFileName={`first-ballot-${ballotNumber}-mystery.png`}
       onShare={(target) =>
         rpcClient("api_log_event", {
           p_name: "share_click",

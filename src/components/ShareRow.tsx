@@ -35,12 +35,21 @@ export default function ShareRow({ reveal, streak }: Props) {
   return (
     <div className="rounded-2xl border border-line p-4">
       <p className="mb-3 text-sm font-medium">Make your verdict public.</p>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={ogBase}
+        alt="Your shareable verdict card"
+        className="mb-3 w-full rounded-xl border border-line"
+        loading="lazy"
+      />
       {origin && (
         <ShareMenu
           text={text}
           url={url}
           trigger="Share →"
           triggerClassName="w-full rounded-lg bg-bronze px-4 py-2.5 text-sm font-semibold text-ivory"
+          imageUrl={ogBase}
+          imageFileName={`first-ballot-${reveal.ballot_number}.png`}
           onShare={(target) =>
             rpcClient("api_log_event", {
               p_name: "share_click",
@@ -51,9 +60,6 @@ export default function ShareRow({ reveal, streak }: Props) {
         />
       )}
       <div className="tabular mt-3 flex flex-wrap items-center gap-4 text-xs opacity-70">
-        <a href={ogBase} target="_blank" className="underline">
-          Card image
-        </a>
         <a href={`${ogBase}&fmt=story`} target="_blank" className="underline">
           Story format (for IG)
         </a>
