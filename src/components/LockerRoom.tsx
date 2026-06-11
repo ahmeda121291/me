@@ -91,10 +91,12 @@ export default function LockerRoom({ reveal, stats }: Props) {
           Voter Profile. <span className="tabular">{CLUB_MONTHLY_DISPLAY}</span>{" "}
           or <span className="tabular">{CLUB_ANNUAL_DISPLAY}</span>.
         </p>
-        <p className="mt-1 text-xs italic opacity-60">
-          The Club opens with the next release — this surface goes live in
-          Phase 2.
-        </p>
+        <a
+          href="/club"
+          className="mt-3 inline-block rounded-lg bg-bronze px-5 py-2.5 text-sm font-semibold text-ivory"
+        >
+          Join The Club →
+        </a>
       </section>
 
       <section className="tabular grid grid-cols-3 gap-3 text-center">

@@ -15,13 +15,29 @@ API (exactly one feature: the Voter Profile narrative).
 
 ## Status — build phases (spec §14)
 
-- [x] **Phase 1 — The free loop**: migrations, sample seed, daily ballot page,
-  vote API + live split, reveal choreography, Locker Room, localStorage
-  scoring, share images (OG + story), `/b/[n]` landing, countdown.
-- [ ] Phase 2 — Identity + commerce (Supabase Auth, Stripe checkout/webhooks, The Club)
-- [ ] Phase 3 — Data + variant games (ingestion, generator, `/play` endless modes)
+- [x] **Phase 1 — The free loop**: migrations, daily ballot page, vote API +
+  live split, reveal choreography, Locker Room, localStorage scoring, share
+  images (OG + story), `/b/[n]` landing, countdown.
+- [x] **Phase 2 — Identity + commerce**: magic-link auth, history migration
+  (`api_claim_votes`), Stripe Checkout + webhook provisioning via Supabase
+  Edge Functions (zero Vercel secrets), Customer Portal, `/club`, `/welcome`,
+  member gating.
+- [x] **Phase 3 — Data + variant games**: full real dataset loaded
+  (5,416 players · 31,701 player-seasons · 3,921 awards · 1947–2026, real HOF
+  flags), §5.3 borderline-sampling generator (1,858 season ballots across five
+  modes), 24 hand-curated real daily career cards, `/play` hub + endless modes
+  with no-repeat serving, session tallies + share.
 - [ ] Phase 4 — The Voter Profile (spectrum math, archetypes, AI narrative)
-- [ ] Phase 5 — Admin, push, polish
+- [ ] Phase 5 — Admin, push, PWA, streak-milestone shares, polish
+
+### Stripe activation (one-time)
+
+Runtime Stripe calls happen in Supabase Edge Functions reading
+`app_config.stripe_secret_key` (service-role-only table). To activate
+payments: store the secret key in `app_config`, then call the admin-gated
+`stripe-setup` function once — it creates the webhook endpoint itself and
+captures the signing secret. Nothing Stripe-related ever enters Vercel env
+or the repo.
 
 ## Setup
 

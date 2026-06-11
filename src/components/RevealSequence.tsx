@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { Reveal } from "@/lib/types";
+import { truthLine } from "@/lib/truth-copy";
 import SplitBar from "./SplitBar";
 
 interface Props {
@@ -10,26 +11,6 @@ interface Props {
   accuracy: number | null;
   compressed?: boolean; // endless-mode 1.2s variant
   onDone?: () => void;
-}
-
-function truthLine(reveal: Reveal): { text: string; className: string } {
-  if (reveal.scoring === "crowd") {
-    return { text: "The people’s verdict", className: "italic text-bronze" };
-  }
-  switch (reveal.truth.status) {
-    case "in":
-      return {
-        text: `Inducted ${reveal.truth.detail.inducted_year ?? ""}`.trim(),
-        className: "text-bronze",
-      };
-    case "out":
-      return { text: "Not in the Hall", className: "text-ink" };
-    default:
-      return {
-        text: `Eligible ${reveal.truth.detail.eligible_year ?? "soon"} — verdict pending`,
-        className: "italic opacity-80",
-      };
-  }
 }
 
 // Four beats, ~600ms each, skippable on tap (spec §8):

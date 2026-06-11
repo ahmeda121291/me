@@ -1,6 +1,7 @@
 "use client";
 
 import type { Reveal, Verdict } from "./types";
+import { verdictMatchesTruth } from "./truth-copy";
 
 // All free-tier state lives client-side (spec §7, identity ladder rung 1).
 // It migrates to the account on signup (Phase 2).
@@ -45,17 +46,10 @@ export function recordReveal(liveDate: string, reveal: Reveal): HistoryEntry {
   const isMajority = total > 0 && mine >= total - mine;
 
   const status = reveal.scoring === "crowd" ? "crowd" : reveal.truth.status;
-  let correct: boolean | null = null;
-  if (status === "in" || status === "out") {
-    correct =
-      (status === "in" &&
-        (reveal.your_verdict === "IN" || reveal.your_verdict === "YES")) ||
-      (status === "out" &&
-        (reveal.your_verdict === "OUT" || reveal.your_verdict === "NO"));
-  }
+  const correct = verdictMatchesTruth(reveal);
 
   const entry: HistoryEntry = {
-    n: reveal.ballot_number,
+    n: reveal.ballot_number ?? 0,
     id: reveal.ballot_id,
     v: reveal.your_verdict,
     d: liveDate,

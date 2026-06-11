@@ -44,9 +44,17 @@ export default function RootLayout({
           <a href="/" className="text-lg font-semibold tracking-tight">
             {SITE_NAME}
           </a>
-          <span aria-hidden className="text-sm text-bronze">
-            ●
-          </span>
+          <nav className="flex items-center gap-4 text-sm">
+            <a href="/play" className="opacity-80 hover:opacity-100">
+              Play
+            </a>
+            <a href="/club" className="text-bronze">
+              The Club
+            </a>
+            <a href="/me" aria-label="Your locker" className="opacity-80">
+              ◍
+            </a>
+          </nav>
         </header>
         {children}
       </body>

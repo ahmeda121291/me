@@ -52,6 +52,7 @@ export interface Truth {
   detail: {
     inducted_year?: number;
     eligible_year?: number;
+    allnba_team?: string;
     crowd?: boolean;
   };
 }
@@ -60,7 +61,9 @@ export type Split = Record<string, number>;
 
 export interface Reveal {
   ballot_id: number;
-  ballot_number: number;
+  ballot_number: number | null;
+  type?: BallotType;
+  season_end_year?: number | null;
   your_verdict: Verdict;
   player_name: string;
   truth: Truth;
