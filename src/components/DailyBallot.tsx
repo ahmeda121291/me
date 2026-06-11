@@ -13,6 +13,7 @@ import { rpcClient } from "@/lib/client-api";
 import { displayDateET } from "@/lib/time";
 import BallotCard from "./BallotCard";
 import Basketball from "./Basketball";
+import PreVoteShare from "./PreVoteShare";
 import StampBar from "./StampBar";
 import RevealSequence from "./RevealSequence";
 import LockerRoom from "./LockerRoom";
@@ -124,10 +125,12 @@ export default function DailyBallot({ ballot }: Props) {
           )}
         </div>
 
-        <div aria-hidden className="flex flex-1 items-center justify-center py-1">
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 py-1">
           <Basketball
-            className={`h-24 w-24 text-bronze ${stamping ? "opacity-5" : "opacity-10"}`}
+            aria-hidden
+            className={`h-20 w-20 text-bronze ${stamping ? "opacity-5" : "opacity-10"}`}
           />
+          {!stamping && <PreVoteShare ballotNumber={ballot.ballot_number} />}
         </div>
 
         <div className={stamping ? "pointer-events-none opacity-40" : ""}>
