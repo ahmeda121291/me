@@ -86,8 +86,91 @@ async function sendSms(to: string, body: string): Promise<boolean> {
   return res.ok;
 }
 
-async function runDaily(force: boolean): Promise<Record<string, unknown>> {
+// The daily email is the product in miniature: the blind résumé itself,
+// numbers big, name sealed, one bronze button.
+function dailyEmailHtml(ballot: {
+  ballot_number: number;
+  payload: {
+    era_band?: string;
+    career?: Record<string, number>;
+    accolades?: { allstar?: number; champ?: number; mvp?: number };
+  };
+}, site: string): string {
+  const c = ballot.payload?.career ?? {};
+  const a = ballot.payload?.accolades ?? {};
+  const era = ballot.payload?.era_band ?? "";
+  const mono = "Consolas,Menlo,'Courier New',monospace";
+  const serif = "Georgia,'Times New Roman',serif";
+  const statCell = (v: unknown, label: string) =>
+    `<td align="center" style="padding:0 10px">
+       <div style="font-family:${mono};font-size:34px;color:#191511">${v ?? "—"}</div>
+       <div style="font-family:${mono};font-size:11px;letter-spacing:3px;color:#8a8276;padding-top:2px">${label}</div>
+     </td>`;
+
+  return `<!DOCTYPE html>
+<html><body style="margin:0;padding:0;background-color:#F6F1E7">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F6F1E7">
+<tr><td align="center" style="padding:36px 16px">
+<table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%">
+
+  <tr><td style="padding-bottom:18px">
+    <table role="presentation" width="100%"><tr>
+      <td style="font-family:${mono};font-size:13px;letter-spacing:4px;color:#9C6B2F">&#127936; FIRST BALLOT</td>
+      <td align="right" style="font-family:${mono};font-size:13px;letter-spacing:3px;color:#8a8276">BALLOT NO. ${ballot.ballot_number}</td>
+    </tr></table>
+  </td></tr>
+
+  <tr><td style="background-color:#F1EDE3;border:1px solid #ddd5c4;border-radius:16px;padding:30px 28px">
+    <div style="font-family:${serif};font-style:italic;font-size:16px;color:#6f6759">${era}</div>
+    <div style="font-family:${serif};font-size:40px;font-weight:bold;color:#191511;letter-spacing:8px;padding:14px 0 4px">&#9608;&#9608;&#9608;&#9608;&#9608; &#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</div>
+    <div style="font-family:${serif};font-size:13px;color:#8a8276;padding-bottom:18px">The name stays sealed until you vote.</div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 -10px"><tr>
+      ${statCell(c.ppg, "PPG")}
+      ${statCell(c.rpg, "RPG")}
+      ${statCell(c.apg, "APG")}
+      ${statCell(c.gp, "GP")}
+    </tr></table>
+
+    <div style="font-family:${serif};font-size:17px;font-weight:bold;color:#191511;padding-top:20px">
+      ${a.allstar ?? 0}&#215; All-Star &#183; ${a.champ ?? 0}&#215; champion &#183; ${(a.mvp ?? 0) > 0 ? `${a.mvp}&#215; MVP` : "0 MVPs"}
+    </div>
+
+    <table role="presentation" cellpadding="0" cellspacing="0" style="padding-top:26px"><tr><td style="border-radius:10px;background-color:#9C6B2F">
+      <a href="${site}" style="display:inline-block;padding:15px 34px;font-family:${serif};font-size:18px;font-weight:bold;color:#F6F1E7;text-decoration:none">Cast your verdict &#8594;</a>
+    </td></tr></table>
+    <div style="font-family:${serif};font-size:13px;color:#8a8276;padding-top:12px">Hall of Fame: IN or OUT? The booth closes at midnight ET.</div>
+  </td></tr>
+
+  <tr><td style="padding-top:18px">
+    <table role="presentation" width="100%"><tr>
+      <td style="font-family:${serif};font-style:italic;font-size:13px;color:#8a8276">One career a day. No names. Your call.</td>
+      <td align="right" style="font-family:${serif};font-size:12px;color:#a89f8f"><a href="${site}/me" style="color:#a89f8f">Unsubscribe</a></td>
+    </tr></table>
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+async function runDaily(force: boolean, testEmail?: string): Promise<Record<string, unknown>> {
   const { hour, date } = etParts();
+
+  const { data: ballot } = await supabase.rpc("api_today_ballot");
+  if (!ballot) return { daily: "no ballot scheduled" };
+
+  const site = (await config("site_url")) ?? "https://www.playfirstballot.com";
+  const n = ballot.ballot_number;
+  const subject = `Ballot No. ${n} is live — one career, no name. Your call.`;
+  const html = dailyEmailHtml(ballot, site);
+
+  // Test mode: send the daily email to one address, skip the log/fan-out.
+  if (testEmail) {
+    const ok = await sendEmail(testEmail, subject, html);
+    return { daily: "test", sent: ok };
+  }
+
   if (!force && hour !== 0) return { daily: "not the hour" };
 
   // Dedupe: one daily send per ET date.
@@ -96,11 +179,6 @@ async function runDaily(force: boolean): Promise<Record<string, unknown>> {
   });
   if (logErr) return { daily: "already sent" };
 
-  const { data: ballot } = await supabase.rpc("api_today_ballot");
-  if (!ballot) return { daily: "no ballot scheduled" };
-
-  const site = (await config("site_url")) ?? "https://www.playfirstballot.com";
-  const n = ballot.ballot_number;
   const text = `First Ballot No. ${n} is live. One career, no name — IN or OUT? ${site}`;
 
   const pushSent = await sendPush(JSON.stringify({
@@ -114,14 +192,7 @@ async function runDaily(force: boolean): Promise<Record<string, unknown>> {
   let emails = 0, smses = 0;
   for (const s of subs ?? []) {
     if (s.channel === "email") {
-      if (await sendEmail(
-        s.address,
-        `Ballot No. ${n} is live — your call`,
-        `<p style="font-family:Georgia,serif;font-size:17px">One career a day. No names. Your call.</p>
-         <p style="font-family:Georgia,serif">Ballot No. ${n} just went live. The booth closes at midnight ET.</p>
-         <p><a href="${site}" style="font-family:Georgia,serif;font-weight:bold">Cast your verdict →</a></p>
-         <p style="font-size:11px;color:#888">Unsubscribe: reply STOP or visit ${site}/me</p>`,
-      )) emails++;
+      if (await sendEmail(s.address, subject, html)) emails++;
     } else if (s.channel === "sms") {
       if (await sendSms(s.address, text)) smses++;
     }
@@ -216,7 +287,10 @@ async function runResolutions(): Promise<Record<string, unknown>> {
 
 Deno.serve(async (req) => {
   const body = await req.json().catch(() => ({}));
-  const daily = await runDaily(body.force_daily === true);
+  const daily = await runDaily(
+    body.force_daily === true,
+    typeof body.test_email === "string" ? body.test_email : undefined,
+  );
   const resolutions = await runResolutions();
   return Response.json({ ...daily, ...resolutions });
 });
