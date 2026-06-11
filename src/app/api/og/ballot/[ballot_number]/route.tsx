@@ -146,8 +146,9 @@ export async function GET(
             position: "relative",
             gap: story ? 56 : 24,
             // In story format the stamp gets its own headroom so it never
-            // collides with the name.
-            paddingTop: story && verdict ? 200 : undefined,
+            // collides with the name. (Conditional spread — satori crashes
+            // on style values that are literally `undefined`.)
+            ...(story && verdict ? { paddingTop: 200 } : {}),
           }}
         >
           {verdict && (
@@ -196,7 +197,7 @@ export async function GET(
             {a.mvp > 0 ? `${a.mvp}× MVP` : "0 MVPs"}
           </span>
 
-          {inPct !== null && (
+          {inPct !== null && total >= 10 && (
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               <div
                 style={{

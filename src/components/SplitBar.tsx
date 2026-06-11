@@ -15,6 +15,21 @@ export default function SplitBar({ split, yourVerdict, animate = true }: Props) 
   const total = entries.reduce((sum, [, n]) => sum + n, 0);
   if (total === 0) return null;
 
+  // Early returns stay sealed — a young split reads as empty, not exciting.
+  if (total < 10) {
+    return (
+      <div>
+        <div className="flex h-3 w-full overflow-hidden rounded-full bg-faint">
+          <span className="h-full w-full bg-line opacity-40" />
+        </div>
+        <p className="mt-2 text-xs italic opacity-70">
+          Early returns — the room is still filing in. The split unseals at 10
+          verdicts{yourVerdict ? `, and your ${yourVerdict} is on the record` : ""}.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex h-3 w-full overflow-hidden rounded-full bg-faint">

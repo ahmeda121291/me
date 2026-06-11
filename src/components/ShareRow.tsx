@@ -16,6 +16,7 @@ interface Props {
 // resolve to /b/[n] with the spoiler-safe OG card.
 export default function ShareRow({ reveal, streak }: Props) {
   const [origin, setOrigin] = useState("");
+  const [showName, setShowName] = useState(false);
   useEffect(() => setOrigin(window.location.origin), []);
 
   const url = `${origin}/b/${reveal.ballot_number}`;
@@ -23,9 +24,13 @@ export default function ShareRow({ reveal, streak }: Props) {
   const agreed = total
     ? Math.round(((reveal.split[reveal.your_verdict] ?? 0) / total) * 100)
     : 0;
-  const text = `${SITE_NAME} No. ${reveal.ballot_number} — I voted ${reveal.your_verdict}. ${agreed}% agreed. Streak: ${streak}.`;
+  // Don't brag about the split until the room has filled.
+  const text =
+    total >= 10
+      ? `${SITE_NAME} No. ${reveal.ballot_number} — I voted ${reveal.your_verdict}. ${agreed}% agreed. Streak: ${streak}.`
+      : `${SITE_NAME} No. ${reveal.ballot_number} — I voted ${reveal.your_verdict}. One career, no name. Think you can read it blind?`;
 
-  const ogBase = `/api/og/ballot/${reveal.ballot_number}?v=${reveal.your_verdict}&s=${streak}&spoiler=1`;
+  const ogBase = `/api/og/ballot/${reveal.ballot_number}?v=${reveal.your_verdict}&s=${streak}${showName ? "" : "&spoiler=1"}`;
 
   return (
     <div className="rounded-2xl border border-line p-4">
@@ -45,16 +50,27 @@ export default function ShareRow({ reveal, streak }: Props) {
           }
         />
       )}
-      <div className="tabular mt-3 flex gap-4 text-xs opacity-70">
+      <div className="tabular mt-3 flex flex-wrap items-center gap-4 text-xs opacity-70">
         <a href={ogBase} target="_blank" className="underline">
           Card image
         </a>
         <a href={`${ogBase}&fmt=story`} target="_blank" className="underline">
           Story format (for IG)
         </a>
+        <label className="flex cursor-pointer items-center gap-1.5">
+          <input
+            type="checkbox"
+            checked={showName}
+            onChange={(e) => setShowName(e.target.checked)}
+            className="accent-[#9C6B2F]"
+          />
+          reveal the name
+        </label>
       </div>
       <p className="mt-2 text-[11px] italic opacity-60">
-        Spoiler-safe until midnight — the name stays hidden on shared cards.
+        {showName
+          ? "Spoiler mode off — the card shows the name. Courteous to wait until midnight."
+          : "Spoiler-safe — the name stays hidden on shared cards until you say otherwise."}
       </p>
     </div>
   );
