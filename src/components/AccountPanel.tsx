@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { computeStats, getDeviceId, type Stats } from "@/lib/scoring";
 import { todayET } from "@/lib/time";
 import { getSupabase, invokeFunction } from "@/lib/supabase-browser";
+import VoterProfile from "./VoterProfile";
 
 interface Me {
   email: string;
@@ -70,10 +71,7 @@ export default function AccountPanel() {
         </section>
       )}
 
-      <section className="rounded-2xl border border-dashed border-line p-4 text-sm opacity-75">
-        Your full Voter Profile — archetype, Voter DNA, the narrative — unlocks
-        at 15 resolvable verdicts. Keep stamping.
-      </section>
+      <VoterProfile />
 
       {me === undefined && <p className="text-sm opacity-50">…</p>}
 

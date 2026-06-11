@@ -27,8 +27,31 @@ API (exactly one feature: the Voter Profile narrative).
   flags), §5.3 borderline-sampling generator (1,858 season ballots across five
   modes), 24 hand-curated real daily career cards, `/play` hub + endless modes
   with no-repeat serving, session tallies + share.
-- [ ] Phase 4 — The Voter Profile (spectrum math, archetypes, AI narrative)
-- [ ] Phase 5 — Admin, push, PWA, streak-milestone shares, polish
+- [x] **Phase 4 — The Voter Profile**: deterministic spectrum math
+  (`api_voter_profile`), eight archetypes, Anthropic narrative with template
+  fallback (`voter-narrative` edge function), Voter DNA radar, Famous Cases
+  projection, profile share image, dev vote-history script.
+- [x] **Phase 5 — Admin, notifications, polish**: five admin surfaces
+  (calendar, card editor with auto-pull, pool dashboard, resolve-pending,
+  metrics), web push (VAPID + service worker + PWA manifest), **daily ballot
+  by email (Resend) and SMS (Twilio)** with hourly pg_cron dispatch at
+  midnight ET, pending-resolution alerts, streak-milestone share cards,
+  `/archive` with member replay.
+
+### Notification activation
+
+Web push works out of the box. Email/SMS activate when their provider keys
+exist in `app_config` (service-role-only table):
+
+| key | provider |
+|---|---|
+| `resend_api_key` | [Resend](https://resend.com) — also set `email_from` after domain verification |
+| `twilio_account_sid`, `twilio_auth_token`, `twilio_from_number` | [Twilio](https://twilio.com) |
+| `anthropic_api_key` | Anthropic — switches the Voter Profile narrative from template to AI |
+
+The `notify` edge function runs hourly via pg_cron, fires the daily blast in
+the first hour after midnight ET (deduped in `notify_log`), and drains the
+pending-resolution queue created by the admin Resolve action.
 
 ### Stripe activation (one-time)
 

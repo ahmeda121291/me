@@ -18,6 +18,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: { default: SITE_NAME, template: `%s · ${SITE_NAME}` },
   description: TAGLINE,
+  manifest: "/manifest.webmanifest",
   openGraph: {
     siteName: SITE_NAME,
     title: SITE_NAME,

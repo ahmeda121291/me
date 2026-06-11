@@ -5,7 +5,11 @@ import type { Stats } from "@/lib/scoring";
 import SplitBar from "./SplitBar";
 import ShareRow from "./ShareRow";
 import Countdown from "./Countdown";
+import DailySubscribe from "./DailySubscribe";
+import PushOptIn from "./PushOptIn";
 import { CLUB_ANNUAL_DISPLAY, CLUB_MONTHLY_DISPLAY } from "@/lib/constants";
+
+const MILESTONES = [7, 30, 100];
 
 interface Props {
   reveal: Reveal;
@@ -125,6 +129,26 @@ export default function LockerRoom({ reveal, stats }: Props) {
           </p>
         </div>
       </section>
+
+      {MILESTONES.includes(stats.streak) && (
+        <section className="rounded-2xl border-2 border-bronze p-4 text-center">
+          <p className="tabular text-4xl font-bold text-bronze">{stats.streak}</p>
+          <p className="text-xs uppercase tracking-widest opacity-70">
+            day streak — that’s a milestone
+          </p>
+          <a
+            href={`/api/og/ballot/${reveal.ballot_number}?v=${reveal.your_verdict}&s=${stats.streak}&spoiler=1&fmt=story`}
+            target="_blank"
+            className="mt-2 inline-block text-sm underline"
+          >
+            Get the milestone card →
+          </a>
+        </section>
+      )}
+
+      <PushOptIn streak={stats.streak} />
+
+      <DailySubscribe />
 
       {pending && (
         <section className="rounded-2xl border border-dashed border-line p-4">
