@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+import { SITE_NAME, TAGLINE } from "@/lib/constants";
 import { rpc } from "@/lib/supabase";
 import type { TodayBallot } from "@/lib/types";
 import DailyBallot from "@/components/DailyBallot";
@@ -6,6 +8,19 @@ import Countdown from "@/components/Countdown";
 // Today's ballot is fetched server-side and cached briefly at the edge;
 // the pre-vote page must load fast on mobile (spec §6).
 export const revalidate = 60;
+
+// The homepage unfurls with today's live card — sharing the bare domain
+// shows the blind résumé, same as sharing /b/[n].
+export async function generateMetadata(): Promise<Metadata> {
+  const ballot = await rpc<TodayBallot>("api_today_ballot", {}, 300);
+  if (!ballot) return {};
+  const title = `${SITE_NAME} No. ${ballot.ballot_number} — IN or OUT?`;
+  const image = `/api/og/ballot/${ballot.ballot_number}?spoiler=1`;
+  return {
+    openGraph: { title, description: TAGLINE, images: [image] },
+    twitter: { card: "summary_large_image", title, images: [image] },
+  };
+}
 
 export default async function Home() {
   const ballot = await rpc<TodayBallot>("api_today_ballot", {}, 60);

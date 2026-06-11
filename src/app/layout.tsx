@@ -25,8 +25,9 @@ export const metadata: Metadata = {
     title: SITE_NAME,
     description: TAGLINE,
     type: "website",
+    images: ["/api/og/today"],
   },
-  twitter: { card: "summary_large_image" },
+  twitter: { card: "summary_large_image", images: ["/api/og/today"] },
 };
 
 export const viewport: Viewport = {
