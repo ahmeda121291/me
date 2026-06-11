@@ -55,14 +55,19 @@ async function sendPush(payload: string, filter?: { deviceIds?: Set<string>; use
   return sent;
 }
 
-async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
+async function sendEmail(
+  to: string,
+  subject: string,
+  html: string,
+  headers?: Record<string, string>,
+): Promise<boolean> {
   const key = await config("resend_api_key");
   if (!key) return false;
   const from = (await config("email_from")) ?? "First Ballot <onboarding@resend.dev>";
   const res = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from, to, subject, html }),
+    body: JSON.stringify({ from, to, subject, html, ...(headers ? { headers } : {}) }),
   });
   return res.ok;
 }
@@ -142,10 +147,25 @@ function dailyEmailHtml(ballot: {
     <div style="font-family:${serif};font-size:13px;color:#8a8276;padding-top:12px">Hall of Fame: IN or OUT? The booth closes at midnight ET.</div>
   </td></tr>
 
+  <tr><td style="padding-top:14px;background-color:#F6F1E7">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #c9a06a;border-radius:14px;background-color:#F6F1E7"><tr><td style="padding:20px 24px">
+      <div style="font-family:${mono};font-size:11px;letter-spacing:3px;color:#9C6B2F">THE CLUB</div>
+      <div style="font-family:${serif};font-size:16px;color:#191511;padding-top:6px;line-height:1.5">
+        One a day not enough? Members get <b>five more game modes</b> with
+        1,800+ ballots, the <b>full playable archive</b>, and an
+        <b>AI-written Voter Profile</b> that knows how you judge careers.
+      </div>
+      <div style="font-family:${serif};font-size:14px;color:#6f6759;padding-top:8px">
+        $8.99/mo &#183; $59.99/yr &#183; no ads, ever &#8212;
+        <a href="${site}/club" style="color:#9C6B2F;font-weight:bold">see what&#8217;s inside &#8594;</a>
+      </div>
+    </td></tr></table>
+  </td></tr>
+
   <tr><td style="padding-top:18px">
     <table role="presentation" width="100%"><tr>
       <td style="font-family:${serif};font-style:italic;font-size:13px;color:#8a8276">One career a day. No names. Your call.</td>
-      <td align="right" style="font-family:${serif};font-size:12px;color:#a89f8f"><a href="${site}/me" style="color:#a89f8f">Unsubscribe</a></td>
+      <td align="right" style="font-family:${serif};font-size:12px;color:#a89f8f"><a href="{{UNSUB}}" style="color:#a89f8f">Unsubscribe</a></td>
     </tr></table>
   </td></tr>
 
@@ -163,11 +183,23 @@ async function runDaily(force: boolean, testEmail?: string): Promise<Record<stri
   const site = (await config("site_url")) ?? "https://www.playfirstballot.com";
   const n = ballot.ballot_number;
   const subject = `Ballot No. ${n} is live — one career, no name. Your call.`;
-  const html = dailyEmailHtml(ballot, site);
+  const baseHtml = dailyEmailHtml(ballot, site);
+  const unsubUrl = (addr: string) =>
+    `${site}/unsubscribe?c=email&a=${encodeURIComponent(addr)}`;
+  const emailFor = (addr: string) => ({
+    html: baseHtml.replaceAll("{{UNSUB}}", unsubUrl(addr)),
+    // One-click unsubscribe headers — required by Gmail/Yahoo bulk-sender
+    // rules and a meaningful deliverability signal.
+    headers: {
+      "List-Unsubscribe": `<${site}/api/unsubscribe?c=email&a=${encodeURIComponent(addr)}>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  });
 
   // Test mode: send the daily email to one address, skip the log/fan-out.
   if (testEmail) {
-    const ok = await sendEmail(testEmail, subject, html);
+    const t = emailFor(testEmail);
+    const ok = await sendEmail(testEmail, subject, t.html, t.headers);
     return { daily: "test", sent: ok };
   }
 
@@ -192,7 +224,8 @@ async function runDaily(force: boolean, testEmail?: string): Promise<Record<stri
   let emails = 0, smses = 0;
   for (const s of subs ?? []) {
     if (s.channel === "email") {
-      if (await sendEmail(s.address, subject, html)) emails++;
+      const e = emailFor(s.address);
+      if (await sendEmail(s.address, subject, e.html, e.headers)) emails++;
     } else if (s.channel === "sms") {
       if (await sendSms(s.address, text)) smses++;
     }
