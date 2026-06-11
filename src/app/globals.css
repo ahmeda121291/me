@@ -79,6 +79,49 @@ body {
   animation: stamp-slam 150ms cubic-bezier(0.2, 0.8, 0.3, 1.1) both;
 }
 
+/* The big verdict stamp dropping onto the card — suspense beat after the
+   hold completes: falls in from above, slams, settles with a bounce. */
+@keyframes stamp-drop {
+  0% {
+    transform: scale(2.8) rotate(-26deg);
+    opacity: 0;
+  }
+  55% {
+    transform: scale(0.92) rotate(-8deg);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1.06) rotate(-9deg);
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+    opacity: 1;
+  }
+}
+.stamp-drop {
+  animation: stamp-drop 600ms cubic-bezier(0.25, 0.9, 0.3, 1.2) both;
+}
+
+/* The card takes the hit. */
+@keyframes card-thud {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  55% {
+    transform: translateY(0) scale(1);
+  }
+  62% {
+    transform: translateY(3px) scale(0.99);
+  }
+  80% {
+    transform: translateY(-1px) scale(1.002);
+  }
+}
+.card-thud {
+  animation: card-thud 700ms ease-out both;
+}
+
 @keyframes rise-in {
   from {
     transform: translateY(10px);
@@ -104,6 +147,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .stamp-slam,
+  .stamp-drop,
+  .card-thud,
   .rise-in,
   .bar-grow {
     animation: none;

@@ -6,6 +6,18 @@ import type { ShareData } from "@/lib/types";
 
 export const runtime = "edge";
 
+// Brand fonts embedded so satori renders the real design system
+// (without these it silently falls back to a generic sans).
+const serifBold = fetch(
+  new URL("../../../../../assets/SourceSerif4-Bold.ttf", import.meta.url),
+).then((r) => r.arrayBuffer());
+const serifSemi = fetch(
+  new URL("../../../../../assets/SourceSerif4-Semibold.ttf", import.meta.url),
+).then((r) => r.arrayBuffer());
+const plexMono = fetch(
+  new URL("../../../../../assets/IBMPlexMono-Medium.ttf", import.meta.url),
+).then((r) => r.arrayBuffer());
+
 const ERA_TINT: Record<string, string> = {
   "1950s": "#EDE3C8",
   "1960s": "#EDE3C8",
@@ -37,6 +49,12 @@ export async function GET(
   const W = story ? 1080 : 1200;
   const H = story ? 1920 : 630;
 
+  const fonts = [
+    { name: "Serif", data: await serifSemi, weight: 600 as const },
+    { name: "Serif", data: await serifBold, weight: 700 as const },
+    { name: "Plex", data: await plexMono, weight: 500 as const },
+  ];
+
   if (!data) {
     return new ImageResponse(
       (
@@ -50,12 +68,13 @@ export async function GET(
             background: "#F6F1E7",
             color: "#191511",
             fontSize: 64,
+            fontFamily: "Serif",
           }}
         >
           {SITE_NAME}
         </div>
       ),
-      { width: W, height: H },
+      { width: W, height: H, fonts },
     );
   }
 
@@ -71,8 +90,8 @@ export async function GET(
 
   const stat = (label: string, value: string) => (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-      <span style={{ fontSize: story ? 64 : 48, fontWeight: 600 }}>{value}</span>
-      <span style={{ fontSize: story ? 26 : 20, opacity: 0.6, letterSpacing: 4 }}>
+      <span style={{ fontSize: story ? 76 : 48, fontFamily: "Plex" }}>{value}</span>
+      <span style={{ fontSize: story ? 28 : 20, opacity: 0.6, letterSpacing: 4, fontFamily: "Plex" }}>
         {label}
       </span>
     </div>
@@ -89,8 +108,8 @@ export async function GET(
           justifyContent: "space-between",
           background: "#F6F1E7",
           color: "#191511",
-          padding: story ? 64 : 48,
-          fontFamily: "Georgia, serif",
+          padding: story ? "100px 64px" : 48,
+          fontFamily: "Serif",
         }}
       >
         <div
@@ -100,6 +119,7 @@ export async function GET(
             fontSize: story ? 34 : 26,
             letterSpacing: 6,
             opacity: 0.7,
+            fontFamily: "Plex",
           }}
         >
           <span>{SITE_NAME.toUpperCase()}</span>
@@ -113,17 +133,20 @@ export async function GET(
             background: tint,
             borderRadius: 32,
             border: "2px solid rgba(25,21,17,0.15)",
-            padding: story ? 56 : 40,
+            padding: story ? "72px 56px" : 40,
             position: "relative",
-            gap: story ? 40 : 24,
+            gap: story ? 56 : 24,
+            // In story format the stamp gets its own headroom so it never
+            // collides with the name.
+            paddingTop: story && verdict ? 200 : undefined,
           }}
         >
           {verdict && (
             <div
               style={{
                 position: "absolute",
-                top: story ? 40 : 24,
-                right: story ? 40 : 32,
+                top: story ? 48 : 24,
+                right: story ? 48 : 32,
                 transform: "rotate(-10deg)",
                 border: `10px solid ${isIn ? "#9C6B2F" : "#8E2A1F"}`,
                 color: isIn ? "#9C6B2F" : "#8E2A1F",
@@ -138,13 +161,13 @@ export async function GET(
             </div>
           )}
 
-          <span style={{ fontSize: story ? 38 : 28, fontStyle: "italic", opacity: 0.75 }}>
+          <span style={{ fontSize: story ? 40 : 28, fontStyle: "italic", opacity: 0.75 }}>
             {data.payload.era_band}
           </span>
 
           <span
             style={{
-              fontSize: spoiler ? (story ? 64 : 48) : story ? 84 : 64,
+              fontSize: spoiler ? (story ? 68 : 48) : story ? 88 : 64,
               fontWeight: 700,
               letterSpacing: spoiler ? 12 : 0,
             }}
@@ -159,7 +182,7 @@ export async function GET(
             {stat("GP", String(c.gp))}
           </div>
 
-          <span style={{ fontSize: story ? 36 : 26, fontWeight: 500 }}>
+          <span style={{ fontSize: story ? 40 : 26, fontWeight: 600 }}>
             {a.allstar}× All-Star · {a.champ}× champion ·{" "}
             {a.mvp > 0 ? `${a.mvp}× MVP` : "0 MVPs"}
           </span>
@@ -178,7 +201,7 @@ export async function GET(
                 <div style={{ width: `${inPct}%`, background: "#9C6B2F" }} />
                 <div style={{ width: `${100 - inPct}%`, background: "#8E2A1F" }} />
               </div>
-              <span style={{ fontSize: story ? 30 : 22, opacity: 0.75 }}>
+              <span style={{ fontSize: story ? 32 : 22, opacity: 0.75, fontFamily: "Plex" }}>
                 IN {inPct}% · OUT {100 - inPct}% · {total.toLocaleString()} verdicts
               </span>
             </div>
@@ -190,20 +213,20 @@ export async function GET(
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            fontSize: story ? 34 : 26,
+            fontSize: story ? 32 : 26,
           }}
         >
           <span style={{ fontStyle: "italic", opacity: 0.7 }}>
             One career a day. No names. Your call.
           </span>
           {streak && (
-            <span style={{ fontWeight: 600, color: "#9C6B2F" }}>
+            <span style={{ fontWeight: 600, color: "#9C6B2F", fontFamily: "Plex" }}>
               ▲ {streak}-day streak
             </span>
           )}
         </div>
       </div>
     ),
-    { width: W, height: H },
+    { width: W, height: H, fonts },
   );
 }

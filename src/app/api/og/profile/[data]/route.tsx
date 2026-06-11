@@ -4,6 +4,13 @@ import { SITE_NAME } from "@/lib/constants";
 
 export const runtime = "edge";
 
+const serifBold = fetch(
+  new URL("../../../../../assets/SourceSerif4-Bold.ttf", import.meta.url),
+).then((r) => r.arrayBuffer());
+const plexMono = fetch(
+  new URL("../../../../../assets/IBMPlexMono-Medium.ttf", import.meta.url),
+).then((r) => r.arrayBuffer());
+
 // Voter Profile share card (spec §8 artifact 4). `data` is base64url JSON:
 // { a: archetype, s: [5 spectrum values -100..100], ha: hall_agreement 0..1,
 //   n: verdict count }. 1200×630 default, 1080×1920 with ?fmt=story.
@@ -50,10 +57,10 @@ export async function GET(
           background: "#F6F1E7",
           color: "#191511",
           padding: story ? 64 : 48,
-          fontFamily: "Georgia, serif",
+          fontFamily: "Serif",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: story ? 34 : 24, letterSpacing: 6, opacity: 0.7 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: story ? 34 : 24, letterSpacing: 6, opacity: 0.7, fontFamily: "Plex" }}>
           <span>{SITE_NAME.toUpperCase()}</span>
           <span>VOTER PROFILE</span>
         </div>
@@ -96,6 +103,13 @@ export async function GET(
         </div>
       </div>
     ),
-    { width: W, height: H },
+    {
+      width: W,
+      height: H,
+      fonts: [
+        { name: "Serif", data: await serifBold, weight: 700 },
+        { name: "Plex", data: await plexMono, weight: 500 },
+      ],
+    },
   );
 }

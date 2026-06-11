@@ -12,6 +12,7 @@ import {
 import { rpcClient } from "@/lib/client-api";
 import { displayDateET } from "@/lib/time";
 import BallotCard from "./BallotCard";
+import Basketball from "./Basketball";
 import StampBar from "./StampBar";
 import RevealSequence from "./RevealSequence";
 import LockerRoom from "./LockerRoom";
@@ -20,12 +21,15 @@ interface Props {
   ballot: TodayBallot;
 }
 
-type Phase = "loading" | "voting" | "revealing" | "locker";
+type Phase = "loading" | "voting" | "stamping" | "revealing" | "locker";
+
+const STAMP_BEAT_MS = 900;
 
 // Orchestrates the daily loop: pre-vote (one viewport, zero scroll) →
-// reveal takeover → Locker Room beneath (spec §6).
+// the stamp slams down (suspense beat) → reveal takeover → Locker Room.
 export default function DailyBallot({ ballot }: Props) {
   const [phase, setPhase] = useState<Phase>("loading");
+  const [stamped, setStamped] = useState<Verdict | null>(null);
   const [reveal, setReveal] = useState<Reveal | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState(false);
@@ -60,6 +64,9 @@ export default function DailyBallot({ ballot }: Props) {
 
   const castVote = async (verdict: Verdict) => {
     setError(false);
+    setStamped(verdict);
+    setPhase("stamping");
+    const beat = new Promise((resolve) => setTimeout(resolve, STAMP_BEAT_MS));
     try {
       const res = await fetch("/api/vote", {
         method: "POST",
@@ -72,11 +79,14 @@ export default function DailyBallot({ ballot }: Props) {
       });
       if (!res.ok) throw new Error("vote failed");
       const data: Reveal = await res.json();
+      await beat; // let the stamp land before the name drops
       recordReveal(ballot.live_date, data);
       setReveal(data);
       setStats(computeStats(ballot.live_date));
       setPhase("revealing");
     } catch {
+      setStamped(null);
+      setPhase("voting");
       setError(true);
     }
   };
@@ -89,27 +99,52 @@ export default function DailyBallot({ ballot }: Props) {
     );
   }
 
-  if (phase === "voting") {
+  if (phase === "voting" || phase === "stamping") {
+    const stamping = phase === "stamping";
+    const stampIn = stamped === "IN";
     return (
-      <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col justify-between gap-5 pb-6 pt-4">
-        <BallotCard
-          payload={ballot.payload}
-          ballotNumber={ballot.ballot_number}
-          dateLabel={displayDateET(ballot.live_date)}
-        />
-        <div>
+      <div className="flex min-h-[calc(100dvh-3.5rem)] flex-col justify-between gap-4 pb-6 pt-4">
+        <div className={`relative ${stamping ? "card-thud" : ""}`}>
+          <BallotCard
+            payload={ballot.payload}
+            ballotNumber={ballot.ballot_number}
+            dateLabel={displayDateET(ballot.live_date)}
+          />
+          {stamping && stamped && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span
+                className={`stamp-drop rounded-xl border-8 px-8 py-2 text-7xl font-bold tracking-[0.2em] ${
+                  stampIn ? "border-bronze text-bronze" : "border-stamp text-stamp"
+                }`}
+                style={{ background: "rgba(246,241,231,0.6)" }}
+              >
+                {stamped}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div aria-hidden className="flex flex-1 items-center justify-center py-1">
+          <Basketball
+            className={`h-24 w-24 text-bronze ${stamping ? "opacity-5" : "opacity-10"}`}
+          />
+        </div>
+
+        <div className={stamping ? "pointer-events-none opacity-40" : ""}>
           <p className="mb-3 text-center text-sm uppercase tracking-widest opacity-70">
-            Hall of Fame?
+            {stamping ? "Sealing your verdict…" : "Hall of Fame?"}
           </p>
-          <StampBar options={["IN", "OUT"]} onConfirm={castVote} />
+          <StampBar options={["IN", "OUT"]} onConfirm={castVote} disabled={stamping} />
           {error && (
             <p className="mt-2 text-center text-xs text-stamp">
               Couldn’t reach the booth — hold to try again.
             </p>
           )}
-          <p className="mt-3 text-center text-[11px] opacity-50">
-            Hold to stamp. No takebacks.
-          </p>
+          {!stamping && (
+            <p className="mt-3 text-center text-[11px] opacity-50">
+              Hold to stamp. No takebacks.
+            </p>
+          )}
         </div>
       </div>
     );

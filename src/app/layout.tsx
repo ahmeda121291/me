@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Source_Serif_4 } from "next/font/google";
 import { SITE_NAME, SITE_URL, TAGLINE } from "@/lib/constants";
+import Basketball from "@/components/Basketball";
 import "./globals.css";
 
 const serif = Source_Serif_4({
@@ -42,7 +43,8 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${serif.variable} ${mono.variable} min-h-dvh`}>
         <header className="mx-auto flex w-full max-w-xl items-center justify-between px-5 pt-4">
-          <a href="/" className="text-lg font-semibold tracking-tight">
+          <a href="/" className="flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <Basketball className="h-[1.1em] w-[1.1em] text-bronze" />
             {SITE_NAME}
           </a>
           <nav className="flex items-center gap-4 text-sm">
