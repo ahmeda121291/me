@@ -1,0 +1,111 @@
+@import "tailwindcss";
+
+/* First Ballot design system (spec §12): museum-archival, not sports-app. */
+:root {
+  --ivory: #f6f1e7;
+  --ink: #191511;
+  --bronze: #9c6b2f;
+  --stamp-red: #8e2a1f;
+  --paper-line: rgba(25, 21, 17, 0.12);
+  --paper-faint: rgba(25, 21, 17, 0.06);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* warmed dark tokens */
+    --ivory: #1c1813;
+    --ink: #ece5d8;
+    --bronze: #c98f4a;
+    --stamp-red: #c2503f;
+    --paper-line: rgba(236, 229, 216, 0.16);
+    --paper-faint: rgba(236, 229, 216, 0.07);
+  }
+}
+
+@theme inline {
+  --color-ivory: var(--ivory);
+  --color-ink: var(--ink);
+  --color-bronze: var(--bronze);
+  --color-stamp: var(--stamp-red);
+  --color-line: var(--paper-line);
+  --color-faint: var(--paper-faint);
+  --font-serif: var(--font-source-serif);
+  --font-mono: var(--font-plex-mono);
+}
+
+html,
+body {
+  background: var(--ivory);
+  color: var(--ink);
+  font-family: var(--font-source-serif), Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.tabular {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Era theming: subtle card tint by decade (spec §12). */
+.era-1950s,
+.era-1960s {
+  background: color-mix(in srgb, var(--ivory) 88%, #8a6f3c 12%);
+}
+.era-1970s,
+.era-1980s {
+  background: color-mix(in srgb, var(--ivory) 90%, #b3622e 10%);
+}
+.era-1990s {
+  background: color-mix(in srgb, var(--ivory) 91%, #4a5e6a 9%);
+}
+.era-2000s,
+.era-2010s,
+.era-2020s {
+  background: color-mix(in srgb, var(--ivory) 95%, #5a5a5a 5%);
+}
+
+/* The stamp slam: 150ms scale + slight rotate after the hold completes. */
+@keyframes stamp-slam {
+  0% {
+    transform: scale(1.6) rotate(-14deg);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1) rotate(-8deg);
+    opacity: 1;
+  }
+}
+.stamp-slam {
+  animation: stamp-slam 150ms cubic-bezier(0.2, 0.8, 0.3, 1.1) both;
+}
+
+@keyframes rise-in {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.rise-in {
+  animation: rise-in 480ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes bar-grow {
+  from {
+    width: 0%;
+  }
+}
+.bar-grow {
+  animation: bar-grow 700ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stamp-slam,
+  .rise-in,
+  .bar-grow {
+    animation: none;
+  }
+}
