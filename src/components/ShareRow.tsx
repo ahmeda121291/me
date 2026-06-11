@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { SITE_NAME, SITE_URL } from "@/lib/constants";
+import { SITE_NAME } from "@/lib/constants";
 import { rpcClient } from "@/lib/client-api";
 import { getDeviceId } from "@/lib/scoring";
 import type { Reveal } from "@/lib/types";
@@ -15,7 +15,7 @@ interface Props {
 export default function ShareRow({ reveal, streak }: Props) {
   const [copied, setCopied] = useState(false);
 
-  const url = `${SITE_URL}/b/${reveal.ballot_number}`;
+  const url = `${typeof window !== "undefined" ? window.location.origin : ""}/b/${reveal.ballot_number}`;
   const total = Object.values(reveal.split).reduce((a, b) => a + b, 0);
   const agreed = total
     ? Math.round(((reveal.split[reveal.your_verdict] ?? 0) / total) * 100)
