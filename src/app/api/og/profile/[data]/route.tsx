@@ -61,7 +61,16 @@ export async function GET(
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: story ? 34 : 24, letterSpacing: 6, opacity: 0.7, fontFamily: "Plex" }}>
-          <span>{SITE_NAME.toUpperCase()}</span>
+          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+            <svg width={story ? 38 : 30} height={story ? 38 : 30} viewBox="0 0 48 48" fill="none">
+              <circle cx="24" cy="24" r="21" stroke="#9C6B2F" strokeWidth="3" />
+              <path d="M24 3v42" stroke="#9C6B2F" strokeWidth="3" />
+              <path d="M3 24h42" stroke="#9C6B2F" strokeWidth="3" />
+              <path d="M9 9.5c5 4.5 8 9 8 14.5s-3 10-8 14.5" stroke="#9C6B2F" strokeWidth="3" />
+              <path d="M39 9.5c-5 4.5-8 9-8 14.5s3 10 8 14.5" stroke="#9C6B2F" strokeWidth="3" />
+            </svg>
+            <span>{SITE_NAME.toUpperCase()}</span>
+          </div>
           <span>VOTER PROFILE</span>
         </div>
 
