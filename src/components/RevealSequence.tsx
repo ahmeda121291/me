@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { Reveal } from "@/lib/types";
-import { truthLine } from "@/lib/truth-copy";
+import { truthLine, verdictMatchesTruth } from "@/lib/truth-copy";
 import SplitBar from "./SplitBar";
+import VerdictFlourish from "./VerdictFlourish";
 
 interface Props {
   reveal: Reveal;
@@ -68,8 +69,13 @@ export default function RevealSequence({
         )}
 
         {beat >= 3 && (
-          <p className={`rise-in mt-6 text-2xl font-medium ${truth.className}`}>
+          <p
+            className={`rise-in mt-6 text-2xl font-medium ${truth.className} ${
+              verdictMatchesTruth(reveal) === false ? "miss-shake" : ""
+            }`}
+          >
             {truth.text}
+            <VerdictFlourish correct={verdictMatchesTruth(reveal)} />
           </p>
         )}
 

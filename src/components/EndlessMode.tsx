@@ -11,6 +11,7 @@ import { truthLine } from "@/lib/truth-copy";
 import SeasonBallotCard from "./SeasonBallotCard";
 import StampBar from "./StampBar";
 import SplitBar from "./SplitBar";
+import VerdictFlourish from "./VerdictFlourish";
 
 interface Props {
   modeKey: BallotType;
@@ -191,10 +192,17 @@ export default function EndlessMode({ modeKey }: Props) {
         <h2 className="rise-in mt-1 text-3xl font-semibold">
           {state.reveal.player_name}
         </h2>
-        <p className={`rise-in mt-3 text-xl font-medium ${t.className}`}>{t.text}</p>
-        {correct !== null && (
-          <p className={`tabular mt-1 text-sm ${correct ? "text-bronze" : "text-stamp"}`}>
-            You said {state.reveal.your_verdict} — {correct ? "correct." : "wrong."}
+        <p
+          className={`rise-in mt-3 text-xl font-medium ${t.className} ${
+            correct === false ? "miss-shake" : ""
+          }`}
+        >
+          {t.text}
+          <VerdictFlourish correct={correct} />
+        </p>
+        {correct === false && (
+          <p className="tabular mt-1 text-sm text-stamp">
+            You said {state.reveal.your_verdict} — history disagreed.
           </p>
         )}
         <div className="mt-4">
