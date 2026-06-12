@@ -24,18 +24,27 @@ export default function AccountPanel() {
   useEffect(() => {
     setStats(computeStats(todayET()));
     const supabase = getSupabase();
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) {
-        setMe(null);
-        return;
-      }
+    let loaded = false;
+    const load = async () => {
+      if (loaded) return;
+      loaded = true;
       const { data: meData } = await supabase.rpc("api_me");
       setMe(meData as Me);
       const { data: n } = await supabase.rpc("api_claim_votes", {
         p_device_id: getDeviceId(),
       });
       if (typeof n === "number" && n > 0) setClaimed(n);
+    };
+    // A magic-link landing exchanges its ?code= asynchronously, so a one-shot
+    // getSession() can miss the session. Subscribe and react when it arrives.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) load();
+      else if (event === "INITIAL_SESSION") setMe(null);
     });
+    supabase.auth.getSession().then(({ data }) => {
+      if (data.session) load();
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
   const openPortal = async () => {
