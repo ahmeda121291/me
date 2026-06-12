@@ -76,7 +76,26 @@ function fallbackNarrative(archetype: string, p: Record<string, unknown>): strin
   );
 }
 
+// Browser calls send Authorization/apikey headers, which trigger a CORS
+// preflight; the function must answer OPTIONS itself (and therefore runs
+// with verify_jwt off — auth is enforced in-handler via getUser).
+const CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, content-type, apikey",
+};
+
+function json(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...CORS },
+  });
+}
+
 Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: CORS });
+  }
+
   const authHeader = req.headers.get("Authorization") ?? "";
   const asUser = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -85,7 +104,7 @@ Deno.serve(async (req) => {
   );
   const { data: userData } = await asUser.auth.getUser();
   if (!userData?.user) {
-    return Response.json({ error: "auth required" }, { status: 401 });
+    return json({ error: "auth required" }, 401);
   }
 
   const body = await req.json().catch(() => ({}));
@@ -93,7 +112,7 @@ Deno.serve(async (req) => {
     p_device_id: typeof body.device_id === "string" ? body.device_id : "",
   });
   if (!profile?.eligible) {
-    return Response.json({ eligible: false, resolved: profile?.resolved ?? 0 });
+    return json({ eligible: false, resolved: profile?.resolved ?? 0 });
   }
 
   const archetype = pickArchetype(profile.spectrums as Spectrums);
@@ -107,7 +126,7 @@ Deno.serve(async (req) => {
     cached.archetype === archetype &&
     profile.verdict_count - (cached.verdict_count ?? 0) < 10
   ) {
-    return Response.json({ eligible: true, archetype, narrative: cached.narrative, profile, cached: true });
+    return json({ eligible: true, archetype, narrative: cached.narrative, profile, cached: true });
   }
 
   let narrative = fallbackNarrative(archetype, profile);
@@ -159,5 +178,5 @@ Deno.serve(async (req) => {
     updated_at: new Date().toISOString(),
   });
 
-  return Response.json({ eligible: true, archetype, narrative, profile, cached: false });
+  return json({ eligible: true, archetype, narrative, profile, cached: false });
 });

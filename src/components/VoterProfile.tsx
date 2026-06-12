@@ -78,46 +78,79 @@ function Radar({ s }: { s: Spectrums }) {
 export default function VoterProfile() {
   const [state, setState] = useState<
     | { phase: "loading" }
+    | { phase: "error" }
     | { phase: "anon"; resolved: number }
     | { phase: "locked"; resolved: number }
     | { phase: "ready"; data: NarrativeResponse; member: boolean; cases: FamousCase[] | null }
   >({ phase: "loading" });
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const supabase = getSupabase();
-      const { data: session } = await supabase.auth.getSession();
-      const { data: raw } = await supabase.rpc("api_voter_profile", {
-        p_device_id: getDeviceId(),
-      });
-      const numbers = raw as ProfileNumbers | null;
-      if (!session.session) {
-        setState({ phase: "anon", resolved: numbers?.resolved ?? 0 });
-        return;
+      try {
+        const supabase = getSupabase();
+        const { data: session } = await supabase.auth.getSession();
+        const { data: raw } = await supabase.rpc("api_voter_profile", {
+          p_device_id: getDeviceId(),
+        });
+        const numbers = raw as ProfileNumbers | null;
+        if (!session.session) {
+          if (!cancelled) setState({ phase: "anon", resolved: numbers?.resolved ?? 0 });
+          return;
+        }
+        if (!numbers?.eligible) {
+          if (!cancelled) setState({ phase: "locked", resolved: numbers?.resolved ?? 0 });
+          return;
+        }
+        const { data } = await invokeFunction<NarrativeResponse>("voter-narrative", {
+          device_id: getDeviceId(),
+        });
+        if (!data) {
+          if (!cancelled) setState({ phase: "error" });
+          return;
+        }
+        if (!data.eligible) {
+          if (!cancelled) setState({ phase: "locked", resolved: numbers.resolved });
+          return;
+        }
+        const { data: member } = await supabase.rpc("api_is_member");
+        let cases: FamousCase[] | null = null;
+        if (member) {
+          const { data: fc } = await supabase.rpc("api_famous_cases");
+          cases = fc as FamousCase[] | null;
+        }
+        if (!cancelled) {
+          setState({ phase: "ready", data, member: Boolean(member), cases });
+        }
+      } catch {
+        if (!cancelled) setState({ phase: "error" });
       }
-      if (!numbers?.eligible) {
-        setState({ phase: "locked", resolved: numbers?.resolved ?? 0 });
-        return;
-      }
-      const { data } = await invokeFunction<NarrativeResponse>("voter-narrative", {
-        device_id: getDeviceId(),
-      });
-      if (!data?.eligible) {
-        setState({ phase: "locked", resolved: numbers.resolved });
-        return;
-      }
-      const { data: member } = await supabase.rpc("api_is_member");
-      let cases: FamousCase[] | null = null;
-      if (member) {
-        const { data: fc } = await supabase.rpc("api_famous_cases");
-        cases = fc as FamousCase[] | null;
-      }
-      setState({ phase: "ready", data, member: Boolean(member), cases });
     })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt]);
 
   if (state.phase === "loading") {
     return <p className="py-8 text-center text-sm opacity-50">Reading your ballots…</p>;
+  }
+
+  if (state.phase === "error") {
+    return (
+      <section className="rounded-2xl border border-dashed border-line p-5 text-center text-sm">
+        <p className="opacity-75">The profile desk didn’t pick up.</p>
+        <button
+          onClick={() => {
+            setState({ phase: "loading" });
+            setAttempt((n) => n + 1);
+          }}
+          className="mt-3 rounded-lg border border-bronze px-5 py-2 font-semibold text-bronze"
+        >
+          Try again
+        </button>
+      </section>
+    );
   }
 
   if (state.phase === "anon" || state.phase === "locked") {
