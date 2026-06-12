@@ -59,6 +59,24 @@ export interface Truth {
 
 export type Split = Record<string, number>;
 
+// Post-reveal career dossier for season modes (who the season belonged to).
+export interface CareerContext {
+  from_year: number | null;
+  to_year: number | null;
+  seasons: number;
+  gp: number;
+  ppg: number;
+  rpg: number;
+  apg: number;
+  team: string | null;
+  allstar: number;
+  allnba: number;
+  mvp: number;
+  dpoy: number;
+  roy: boolean;
+  hof: boolean | null;
+}
+
 export interface Reveal {
   ballot_id: number;
   ballot_number: number | null;
@@ -71,6 +89,7 @@ export interface Reveal {
   case_for: string | null;
   case_against: string | null;
   split: Split;
+  career?: CareerContext | null;
 }
 
 export interface ShareData {

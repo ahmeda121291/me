@@ -1,4 +1,5 @@
 import type { SeasonPayload } from "@/lib/season-types";
+import Basketball from "./Basketball";
 
 interface Props {
   payload: SeasonPayload;
@@ -13,7 +14,8 @@ function eraClass(eraBand: string): string {
   return m ? `era-${m[1]}s` : "era-2000s";
 }
 
-// Single-season anonymized line (spec §3 payload table).
+// Single-season anonymized line (spec §3 payload table), dressed to the same
+// standard as the daily career card: kicker, watermark, full chrome.
 export default function SeasonBallotCard({ payload }: Props) {
   const stats: Array<[string, string]> = [
     ["PPG", payload.ppg.toFixed(1)],
@@ -25,11 +27,20 @@ export default function SeasonBallotCard({ payload }: Props) {
   ];
 
   return (
-    <section className={`${eraClass(payload.era_band)} rounded-2xl border border-line p-5 shadow-sm`}>
+    <section
+      className={`${eraClass(payload.era_band)} relative overflow-hidden rounded-2xl border border-line p-5 shadow-sm`}
+    >
+      <Basketball
+        aria-hidden
+        className="pointer-events-none absolute -bottom-7 -right-7 h-36 w-36 text-bronze opacity-[0.07]"
+      />
+
       <div className="flex items-baseline justify-between text-xs uppercase tracking-widest opacity-70">
-        <span className="italic normal-case tracking-normal">{payload.era_band}</span>
+        <span>The season on the ballot</span>
         <span className="tabular">Age {payload.age}</span>
       </div>
+
+      <p className="mt-3 text-sm italic opacity-80">{payload.era_band}</p>
 
       <dl className="tabular mt-4 grid grid-cols-3 gap-x-4 gap-y-3">
         {stats.map(([label, value]) => (
@@ -59,6 +70,10 @@ export default function SeasonBallotCard({ payload }: Props) {
             .join(" · ")}
         </p>
       )}
+
+      <p className="mt-3 border-t border-line pt-3 text-[11px] italic opacity-50">
+        One season. No name. Your call.
+      </p>
     </section>
   );
 }
