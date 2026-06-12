@@ -12,14 +12,48 @@ export default function ClubCheckout() {
   const [plan, setPlan] = useState<"monthly" | "annual">("annual");
   const [email, setEmail] = useState("");
   const [knownEmail, setKnownEmail] = useState<string | null>(null);
+  const [isMember, setIsMember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    getSupabase()
-      .auth.getSession()
-      .then(({ data }) => setKnownEmail(data.session?.user.email ?? null));
+    const supabase = getSupabase();
+    supabase.auth.getSession().then(async ({ data }) => {
+      setKnownEmail(data.session?.user.email ?? null);
+      if (data.session) {
+        const { data: member } = await supabase.rpc("api_is_member");
+        setIsMember(Boolean(member));
+      }
+    });
   }, []);
+
+  if (isMember) {
+    return (
+      <div className="mt-6 rounded-2xl border border-bronze p-5">
+        <p className="text-xs uppercase tracking-widest text-bronze">
+          Membership
+        </p>
+        <p className="mt-1 text-2xl font-semibold">You’re in.</p>
+        <p className="mt-1 text-sm opacity-75">
+          Everything above is already yours{knownEmail ? ` — ${knownEmail}` : ""}.
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2 text-sm font-semibold">
+          <a href="/play" className="rounded-xl bg-bronze px-4 py-3 text-center text-ivory">
+            Play the modes →
+          </a>
+          <a href="/archive" className="rounded-xl border border-line px-4 py-3 text-center">
+            The archive →
+          </a>
+          <a href="/me" className="rounded-xl border border-line px-4 py-3 text-center">
+            Voter Profile →
+          </a>
+          <a href="/me" className="rounded-xl border border-line px-4 py-3 text-center">
+            Billing & account →
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   const checkout = async () => {
     setBusy(true);
