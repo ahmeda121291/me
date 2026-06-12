@@ -127,6 +127,11 @@ export default function AccountPanel() {
                 Manage subscription
               </button>
             )}
+            {me.is_member && !me.has_stripe && (
+              <p className="self-center text-xs opacity-60">
+                Complimentary membership — no billing on file.
+              </p>
+            )}
             {!me.is_member && (
               <a
                 href="/club"

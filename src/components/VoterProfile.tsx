@@ -133,6 +133,10 @@ export default function VoterProfile() {
             style={{ width: `${Math.min(100, (state.resolved / 15) * 100)}%` }}
           />
         </div>
+        <p className="tabular mt-2 text-[11px] opacity-50">
+          {state.resolved} / 15 · a verdict is resolvable once history has
+          ruled on the career. Endless and era modes count too.
+        </p>
       </section>
     );
   }
@@ -185,6 +189,7 @@ export default function VoterProfile() {
         )}
         {p.accuracy !== null && <span>Accuracy {Math.round(p.accuracy * 100)}%</span>}
         <span className="opacity-60">based on {p.verdict_count} blind verdicts</span>
+        <span className="opacity-40">re-reads you every 10 verdicts</span>
       </div>
 
       <button
