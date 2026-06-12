@@ -2,12 +2,18 @@
 
 import { useEffect, useState } from "react";
 import {
+  archetypeByName,
+  pickArchetype,
+  profileShareData,
   projectVerdict,
   SPECTRUM_LABELS,
   type Spectrums,
 } from "@/lib/archetypes";
+import { SITE_URL } from "@/lib/constants";
 import { getDeviceId } from "@/lib/scoring";
 import { getSupabase, invokeFunction } from "@/lib/supabase-browser";
+import AvatarArt from "./AvatarArt";
+import ShareMenu from "./ShareMenu";
 
 interface ProfileNumbers {
   verdict_count: number;
@@ -76,7 +82,6 @@ export default function VoterProfile() {
     | { phase: "locked"; resolved: number }
     | { phase: "ready"; data: NarrativeResponse; member: boolean; cases: FamousCase[] | null }
   >({ phase: "loading" });
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -143,20 +148,26 @@ export default function VoterProfile() {
 
   const { data, member, cases } = state;
   const p = data.profile!;
-  const share = async () => {
-    const text = `I'm ${data.archetype} — based on ${p.verdict_count} blind verdicts on First Ballot. What's your voter DNA? ${window.location.origin}`;
-    if (navigator.share) {
-      try { await navigator.share({ text }); return; } catch { /* fallthrough */ }
-    }
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  const arch =
+    (data.archetype ? archetypeByName(data.archetype) : undefined) ??
+    pickArchetype(p.spectrums);
+  const shareData = profileShareData(
+    data.archetype ?? arch.name,
+    p.spectrums,
+    p.hall_agreement,
+    p.verdict_count,
+  );
 
   return (
     <section className="rounded-2xl border border-bronze p-5">
-      <p className="text-xs uppercase tracking-widest text-bronze">Voter Profile</p>
-      <h2 className="mt-1 text-3xl font-semibold">{data.archetype}</h2>
+      <div className="flex items-center gap-4">
+        <AvatarArt look={arch.look} size={76} />
+        <div>
+          <p className="text-xs uppercase tracking-widest text-bronze">Voter Profile</p>
+          <h2 className="mt-1 text-3xl font-semibold">{data.archetype}</h2>
+          <p className="text-xs italic text-bronze">{arch.tagline}</p>
+        </div>
+      </div>
       <p className="mt-3 text-sm leading-relaxed">{data.narrative}</p>
 
       <div className="mt-5">
@@ -192,12 +203,38 @@ export default function VoterProfile() {
         <span className="opacity-40">re-reads you every 10 verdicts</span>
       </div>
 
-      <button
-        onClick={share}
-        className="mt-4 w-full rounded-xl bg-bronze py-3 font-semibold text-ivory"
-      >
-        {copied ? "Copied" : "Share your voter DNA"}
-      </button>
+      <div className="mt-4 text-center">
+        <ShareMenu
+          trigger="Share your voter DNA"
+          triggerClassName="w-full rounded-xl bg-bronze py-3 font-semibold text-ivory"
+          text={`I'm ${data.archetype} — based on ${p.verdict_count} blind verdicts on First Ballot. What's your voter DNA?`}
+          url={SITE_URL}
+          imageUrl={`/api/og/profile/${shareData}`}
+          imageFileName="first-ballot-voter-dna.png"
+        />
+      </div>
+
+      <div className="mt-6 flex items-center gap-4 border-t border-line pt-4">
+        <AvatarArt look={arch.look} size={116} />
+        <div className="flex-1 text-center">
+          <p className="text-xs uppercase tracking-widest opacity-60">
+            Your archetype avatar
+          </p>
+          <p className="mt-1 text-sm opacity-75">
+            Profile-pic ready. Wear your philosophy on X, IG, or Reddit.
+          </p>
+          <div className="mt-2">
+            <ShareMenu
+              trigger="Get the avatar 🖼"
+              triggerClassName="rounded-xl border border-bronze px-5 py-2.5 text-sm font-semibold text-bronze"
+              text={`I vote like ${arch.name}. ${arch.tagline} Find your voter DNA on First Ballot.`}
+              url={SITE_URL}
+              imageUrl={`/api/og/avatar/${arch.slug}`}
+              imageFileName={`first-ballot-${arch.slug}.png`}
+            />
+          </div>
+        </div>
+      </div>
 
       {member && cases && cases.length > 0 && (
         <div className="mt-6 border-t border-line pt-4">

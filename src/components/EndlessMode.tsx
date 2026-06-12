@@ -4,11 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { MODES } from "@/lib/modes";
 import type { SeasonBallot } from "@/lib/season-types";
 import type { BallotType, CareerContext, Reveal, Verdict } from "@/lib/types";
+import { SITE_URL } from "@/lib/constants";
 import { getDeviceId } from "@/lib/scoring";
 import { getSupabase } from "@/lib/supabase-browser";
 import { verdictMatchesTruth } from "@/lib/truth-copy";
 import { truthLine } from "@/lib/truth-copy";
 import SeasonBallotCard from "./SeasonBallotCard";
+import ShareMenu from "./ShareMenu";
 import StampBar from "./StampBar";
 import SplitBar from "./SplitBar";
 import VerdictFlourish from "./VerdictFlourish";
@@ -44,7 +46,6 @@ export default function EndlessMode({ modeKey }: Props) {
   const config = MODES.find((m) => m.key === modeKey)!;
   const [state, setState] = useState<State>({ phase: "loading" });
   const [tally, setTally] = useState({ right: 0, total: 0, crowd: 0, run: 0, bestRun: 0 });
-  const [copied, setCopied] = useState(false);
 
   const next = useCallback(async () => {
     setState({ phase: "loading" });
@@ -104,21 +105,33 @@ export default function EndlessMode({ modeKey }: Props) {
     setState({ phase: "reveal", ballot, reveal });
   };
 
-  const share = async () => {
-    const origin = window.location.origin;
-    const text = `${config.title.replace("?", "")} Ballots: ${tally.right}/${tally.total} — can you read a season blind? ${origin}/play`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ text });
-        return;
-      } catch {
-        /* fall through */
-      }
-    }
-    await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  // The run card: the session result as a shareable image.
+  const runImageUrl = `/api/og/run/${btoa(
+    JSON.stringify({
+      q: config.question,
+      r: tally.right,
+      t: tally.total,
+      k: tally.bestRun,
+      c: tally.crowd,
+    }),
+  )
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "")}`;
+  const shareText =
+    config.scoring === "crowd"
+      ? `${tally.crowd} verdicts cast on ${config.question.replace("?", "")} — no right answers, only the room.`
+      : `${config.title.replace("?", "")} ${tally.right}/${tally.total} called blind — can you read a season without the name?`;
+  const runShare = (trigger: string, triggerClassName: string) => (
+    <ShareMenu
+      trigger={trigger}
+      triggerClassName={triggerClassName}
+      text={shareText}
+      url={`${SITE_URL}/play`}
+      imageUrl={runImageUrl}
+      imageFileName="first-ballot-run.png"
+    />
+  );
 
   const header = (
     <div className="mb-4 flex items-baseline justify-between gap-3">
@@ -192,9 +205,12 @@ export default function EndlessMode({ modeKey }: Props) {
             Every {config.title.toLowerCase().replace("?", "")} ballot, stamped.
             New ones mint regularly.
           </p>
-          <button onClick={share} className="mt-4 rounded-lg bg-bronze px-6 py-3 font-semibold text-ivory">
-            {copied ? "Copied" : "Share the run"}
-          </button>
+          <div className="mt-4">
+            {runShare(
+              "Share the run",
+              "rounded-lg bg-bronze px-6 py-3 font-semibold text-ivory",
+            )}
+          </div>
         </div>
       </div>
     );
@@ -329,18 +345,19 @@ export default function EndlessMode({ modeKey }: Props) {
         </div>
       </div>
 
-      <div className="mt-5 flex items-center gap-3">
+      <div className="mt-5">
         <button
           onClick={next}
-          className="flex-1 rounded-xl bg-bronze py-4 text-lg font-semibold text-ivory"
+          className="w-full rounded-xl bg-bronze py-4 text-lg font-semibold text-ivory"
         >
           Next ballot →
         </button>
-        {tally.total > 0 && (tally.total + tally.crowd) % 10 === 0 && (
-          <button onClick={share} className="rounded-xl border border-line px-4 py-4 text-sm">
-            {copied ? "Copied" : "Share"}
-          </button>
-        )}
+        <div className="mt-3 text-center">
+          {runShare(
+            "Share this run 🖼",
+            "rounded-full border border-line px-4 py-2 text-xs hover:border-bronze",
+          )}
+        </div>
       </div>
     </div>
   );
